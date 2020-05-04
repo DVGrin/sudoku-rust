@@ -4,6 +4,8 @@ use std::collections::HashMap;
 const ROWS: &str = "ABCDEFGHI";
 const COLUMNS: &str = "123456789";
 
+// 4.....8.5.3..........7......2.....6.....8.4......1.......6.3.7.5..2.....1.4......
+
 fn parse_input() -> HashMap<String, String> {
     let mut input = String::new();
     io::stdin().read_line(&mut input)
@@ -28,6 +30,42 @@ fn parse_input() -> HashMap<String, String> {
         }
     } 
     return squares;
+}
+
+fn find_units(cell: &str) -> [Vec<String>; 3] {
+    let mut cell = cell.chars();
+    let cell_row = cell.next().unwrap();
+    let cell_column = cell.next().unwrap();
+
+    let mut row_unit: Vec<String> = Vec::new();
+    for row in ROWS.chars() {
+        row_unit.push(String::from(format!("{}{}", row, cell_column)));
+    }
+    
+    let mut column_unit: Vec<String> = Vec::new();
+    for column in COLUMNS.chars() {
+        column_unit.push(String::from(format!("{}{}", cell_row, column)));
+    }
+
+    let mut square_unit: Vec<String> = Vec::new();
+    let rows = match cell_row {
+        'A' | 'B' | 'C' => "ABC",
+        'D' | 'E' | 'F' => "DEF",
+        'G' | 'H' | 'I' => "GHI",
+        _ => unreachable!()
+    };
+    let columns = match cell_column {
+        '1' | '2' | '3' => "123",
+        '4' | '5' | '6' => "456",
+        '7' | '8' | '9' => "789",
+        _ => unreachable!()
+    };
+    for row in rows.chars() {
+        for column in columns.chars() {
+            square_unit.push(String::from(format!("{}{}", row, column)))
+        }
+    }
+    return [row_unit, column_unit, square_unit]
 }
 
 fn print_field(field: HashMap<String, String>) {
