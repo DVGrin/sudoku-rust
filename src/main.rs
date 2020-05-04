@@ -6,7 +6,13 @@ const COLUMNS: &str = "123456789";
 
 // 4.....8.5.3..........7......2.....6.....8.4......1.......6.3.7.5..2.....1.4......
 
-fn parse_input() -> HashMap<String, String> {
+struct Cell {
+    values: String,
+    units: [Vec<String>; 3],
+    peers: Vec<String>
+}
+
+fn parse_input() -> HashMap<String, Cell> {
     let mut input = String::new();
     io::stdin().read_line(&mut input)
                .expect("Failed to read input puzzle");
@@ -17,7 +23,7 @@ fn parse_input() -> HashMap<String, String> {
         split_input[i] = &input[i * 9 .. (i+1) * 9];
     }
 
-    let mut squares: HashMap<String, String> = HashMap::new();
+    let mut squares: HashMap<String, Cell> = HashMap::new();
     for (i, row) in ROWS.chars().enumerate() {
         for (input_char, column) in split_input[i].chars().zip(COLUMNS.chars()) {
             let value = match input_char {
@@ -26,9 +32,16 @@ fn parse_input() -> HashMap<String, String> {
                 _ => unreachable!()
             };
             let key = format!("{}{}", row, column);
+            let units = find_units(&key[..]);
+            let peers = find_peers(&key[..], &units);
+            let value: Cell = Cell {
+                values: value,
+                units: units,
+                peers 
+            };
             squares.insert(key, value);
         }
-    } 
+    }
     return squares;
 }
 
@@ -68,7 +81,7 @@ fn find_units(cell: &str) -> [Vec<String>; 3] {
     return [row_unit, column_unit, square_unit]
 }
 
-fn find_peers(cell: &str, units: [Vec<String>; 3]) -> Vec<String> {
+fn find_peers(cell: &str, units: &[Vec<String>; 3]) -> Vec<String> {
     let mut peers: HashSet<String> = HashSet::new();
     for unit in units.iter() {
         for value in unit.iter() {
@@ -81,13 +94,13 @@ fn find_peers(cell: &str, units: [Vec<String>; 3]) -> Vec<String> {
     return peers;
 }
 
-fn print_field(field: HashMap<String, String>) {
+fn print_field(field: &HashMap<String, Cell>) {
     let mut column_width: [usize; 9] = [0; 9];
     for (j, column) in COLUMNS.chars().enumerate() {
         for row in ROWS.chars() {
             let key = format!("{}{}", row, column);
             let length = match field.get(&key) {
-                Some(s) => s.len(),
+                Some(s) => s.values.len(),
                 None => unreachable!()
             };
             if length > column_width[j] {
@@ -102,7 +115,7 @@ fn print_field(field: HashMap<String, String>) {
         for (column, width) in COLUMNS.chars().zip(column_width.iter()) {
             let key = format!("{}{}", row, column);
             let value = match field.get(&key) {
-                Some(s) => s,
+                Some(s) => &s.values,
                 None => unreachable!()
             };
             to_print.push_str(&format!("{:^width$}", value, width=width)[..]);
@@ -126,6 +139,7 @@ fn print_field(field: HashMap<String, String>) {
 
 fn main() {
     let sudoku_field = parse_input();
-    print_field(sudoku_field);
-    println!("{:?}", find_peers("C3", find_units("C3")));
+    print_field(&sudoku_field);
+    let c3 = sudoku_field.get("C3").unwrap();
+    println!("{:?}\n{:?}", c3.units, c3.peers);
 }
