@@ -5,6 +5,7 @@ const ROWS: &str = "ABCDEFGHI";
 const COLUMNS: &str = "123456789";
 
 // 4.....8.5.3..........7......2.....6.....8.4......1.......6.3.7.5..2.....1.4......
+// 003020600900305001001806400008102900700000008006708200002609500800203009005010300
 
 struct Cell {
     values: String,
@@ -12,7 +13,7 @@ struct Cell {
     peers: Vec<String>
 }
 
-fn parse_input() -> Option<HashMap<String, Cell>> {
+fn parse_input_once() -> Option<HashMap<String, Cell>> {
     let mut input = String::new();
     match io::stdin().read_line(&mut input) {
         Ok(_) => (),
@@ -32,29 +33,49 @@ fn parse_input() -> Option<HashMap<String, Cell>> {
     }
 
     let mut squares: HashMap<String, Cell> = HashMap::new();
-    for (i, row) in ROWS.chars().enumerate() {
-        for (input_char, column) in split_input[i].chars().zip(COLUMNS.chars()) {
-            let value = match input_char {
-                '1' | '2' | '3' | '4' | '5' | '6' | '7' | '8' | '9' => input_char.to_string(),
-                '0' | '.' => String::from("123456789"),
-                _ => String::from("Invalid value!")
-            };
-            if &value[..] == "Invalid value!" {
-                println!("Invalid value in input puzzle: '{}' in position {}{}", input_char, row, column);
-                return None;
-            }
+    for row in ROWS.chars() {
+        for column in COLUMNS.chars() {
             let key = format!("{}{}", row, column);
             let units = find_units(&key[..]);
             let peers = find_peers(&key[..], &units);
-            let value: Cell = Cell {
-                values: value,
-                units: units,
-                peers 
+            let cell = Cell {
+                values: "123456789".to_string(),
+                units,
+                peers
             };
-            squares.insert(key, value);
+            squares.insert(key.clone(), cell);
+        }
+    }
+    for (i, row) in ROWS.chars().enumerate() {
+        for (input_char, column) in split_input[i].chars().zip(COLUMNS.chars()) {
+            let key = format!("{}{}", row, column);
+            match input_char {
+                '1' | '2' | '3' | '4' | '5' | '6' | '7' | '8' | '9' => {
+                    match assign_value(&mut squares, &key[..], &input_char.to_string()) {
+                        Some(_) => (),
+                        None => {
+                            println!("Input puzzle contains a contradiction");
+                            return None;
+                        }
+                    }
+                }
+                '0' | '.' => (),
+                _ => {
+                    println!("Invalid value in input puzzle: '{}' in position {}{}", input_char, row, column);
+                    return None;
+                }
+            };
         }
     }
     return Some(squares);
+}
+
+fn parse_input() -> HashMap<String, Cell> {
+    let mut sudoku_field: Option<HashMap<String, Cell>> = None;
+    while let None = sudoku_field {
+        sudoku_field = parse_input_once();
+    }
+    return sudoku_field.unwrap();
 }
 
 fn find_units(cell: &str) -> [Vec<String>; 3] {
@@ -106,6 +127,36 @@ fn find_peers(cell: &str, units: &[Vec<String>; 3]) -> Vec<String> {
     return peers;
 }
 
+// assign_value returns None if there was a contradiction, assigned value otherwise
+fn assign_value(field: &mut HashMap<String, Cell>, key: &str, value: &str) -> Option<String> {
+    if value.len() > 1 {
+        let cell = field.get_mut(&key.to_string()).unwrap();
+        cell.values = value.to_string();
+        return Some(value.to_string());
+    }
+    if value == "" {
+        return None;
+    }
+    let cell = field.get_mut(&key.to_string()).unwrap();
+    cell.values = value.to_string();
+    let peers = &cell.peers.clone();
+    for peer_key in peers.iter() {
+        let peer = field.get_mut(peer_key).unwrap();
+        let mut new_values = peer.values.clone();
+        match new_values.find(value) {
+            None => (),
+            Some(i) => {
+                new_values.remove(i);
+                match assign_value(field, peer_key, &new_values[..]) {
+                    None => return None,
+                    Some(_) => ()
+                }
+            }
+        }
+    }
+    return Some(value.to_string());
+}
+
 fn print_field(field: &HashMap<String, Cell>) {
     let mut column_width: [usize; 9] = [0; 9];
     for (j, column) in COLUMNS.chars().enumerate() {
@@ -150,12 +201,9 @@ fn print_field(field: &HashMap<String, Cell>) {
 }
 
 fn main() {
-    let mut sudoku_field: Option<HashMap<String, Cell>> = None;
-    while let None = sudoku_field {
-        sudoku_field = parse_input();
-    }
-    let sudoku_field = sudoku_field.unwrap();
+    let sudoku_field = parse_input();
     print_field(&sudoku_field);
+    println!("\nUnits and peers for C3:");
     let c3 = sudoku_field.get("C3").unwrap();
     println!("{:?}\n{:?}", c3.units, c3.peers);
 }
