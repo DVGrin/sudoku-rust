@@ -12,11 +12,19 @@ struct Cell {
     peers: Vec<String>
 }
 
-fn parse_input() -> HashMap<String, Cell> {
+fn parse_input() -> Option<HashMap<String, Cell>> {
     let mut input = String::new();
-    io::stdin().read_line(&mut input)
-               .expect("Failed to read input puzzle");
-    assert_eq!(input.trim().chars().count(), 81, "Input puzzle should have exactly 81 characters in it");
+    match io::stdin().read_line(&mut input) {
+        Ok(_) => (),
+        Err(_) => {
+            println!("There was a problem with reading input");
+            return None
+        }
+    }
+    if input.trim().chars().count() != 81 {
+        println!("The length of puzzle should be exactly 81 characters, not {}", input.trim().chars().count());
+        return None
+    }
 
     let mut split_input = [""; 9];
     for i in 0..9 {
@@ -29,8 +37,12 @@ fn parse_input() -> HashMap<String, Cell> {
             let value = match input_char {
                 '1' | '2' | '3' | '4' | '5' | '6' | '7' | '8' | '9' => input_char.to_string(),
                 '0' | '.' => String::from("123456789"),
-                _ => unreachable!()
+                _ => String::from("Invalid value!")
             };
+            if &value[..] == "Invalid value!" {
+                println!("Invalid value in input puzzle: '{}' in position {}{}", input_char, row, column);
+                return None;
+            }
             let key = format!("{}{}", row, column);
             let units = find_units(&key[..]);
             let peers = find_peers(&key[..], &units);
@@ -42,7 +54,7 @@ fn parse_input() -> HashMap<String, Cell> {
             squares.insert(key, value);
         }
     }
-    return squares;
+    return Some(squares);
 }
 
 fn find_units(cell: &str) -> [Vec<String>; 3] {
@@ -138,7 +150,11 @@ fn print_field(field: &HashMap<String, Cell>) {
 }
 
 fn main() {
-    let sudoku_field = parse_input();
+    let mut sudoku_field: Option<HashMap<String, Cell>> = None;
+    while let None = sudoku_field {
+        sudoku_field = parse_input();
+    }
+    let sudoku_field = sudoku_field.unwrap();
     print_field(&sudoku_field);
     let c3 = sudoku_field.get("C3").unwrap();
     println!("{:?}\n{:?}", c3.units, c3.peers);
