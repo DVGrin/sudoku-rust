@@ -1,5 +1,5 @@
 use std::io;
-use std::collections::HashMap;
+use std::collections::{HashMap, HashSet};
 
 const ROWS: &str = "ABCDEFGHI";
 const COLUMNS: &str = "123456789";
@@ -68,6 +68,19 @@ fn find_units(cell: &str) -> [Vec<String>; 3] {
     return [row_unit, column_unit, square_unit]
 }
 
+fn find_peers(cell: &str, units: [Vec<String>; 3]) -> Vec<String> {
+    let mut peers: HashSet<String> = HashSet::new();
+    for unit in units.iter() {
+        for value in unit.iter() {
+            peers.insert(value.clone());
+        }
+    }
+    peers.remove(&cell.to_string());
+    let mut peers: Vec<String> = peers.into_iter().collect();
+    peers.sort();
+    return peers;
+}
+
 fn print_field(field: HashMap<String, String>) {
     let mut column_width: [usize; 9] = [0; 9];
     for (j, column) in COLUMNS.chars().enumerate() {
@@ -114,4 +127,5 @@ fn print_field(field: HashMap<String, String>) {
 fn main() {
     let sudoku_field = parse_input();
     print_field(sudoku_field);
+    println!("{:?}", find_peers("C3", find_units("C3")));
 }
