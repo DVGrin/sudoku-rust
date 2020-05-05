@@ -200,9 +200,24 @@ fn print_field(field: &HashMap<String, Cell>) {
     }
 }
 
+fn cells_to_guess (field: &HashMap<String, Cell>) -> Vec<(&String, &Cell)> {
+    let mut result: Vec<(&String, &Cell)> = Vec::new();
+    for (key, value) in field.iter() {
+        if value.values.len() > 1 {
+            result.push((key, value));
+        }
+    }
+    result.sort_by(|x, y| x.1.values.len().cmp(&y.1.values.len()));
+    return result;
+}
+
 fn main() {
     let sudoku_field = parse_input();
     print_field(&sudoku_field);
+    println!("\nCells to guess:");
+    for (cell, _) in cells_to_guess(&sudoku_field).iter() {
+        print!("{} ", cell);
+    }
     println!("\nUnits and peers for C3:");
     let c3 = sudoku_field.get("C3").unwrap();
     println!("{:?}\n{:?}", c3.units, c3.peers);
