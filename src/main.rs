@@ -7,6 +7,7 @@ const COLUMNS: &str = "123456789";
 // 4.....8.5.3..........7......2.....6.....8.4......1.......6.3.7.5..2.....1.4......
 // 003020600900305001001806400008102900700000008006708200002609500800203009005010300
 
+#[derive(Clone)]
 struct Cell {
     values: String,
     units: [Vec<String>; 3],
@@ -200,7 +201,7 @@ fn print_field(field: &HashMap<String, Cell>) {
     }
 }
 
-fn cells_to_guess (field: &HashMap<String, Cell>) -> Vec<(&String, &Cell)> {
+fn candidates (field: &HashMap<String, Cell>) -> Vec<(&String, &Cell)> {
     let mut result: Vec<(&String, &Cell)> = Vec::new();
     for (key, value) in field.iter() {
         if value.values.len() > 1 {
@@ -211,14 +212,50 @@ fn cells_to_guess (field: &HashMap<String, Cell>) -> Vec<(&String, &Cell)> {
     return result;
 }
 
+fn search(field: &HashMap<String, Cell>) -> Option<HashMap<String, Cell>> {
+    let initial_field = field.clone();
+    let candidates = candidates(&field);
+    if candidates.is_empty() {
+        return Some(initial_field);
+    }
+
+    let candidate: &(&String, &Cell) = candidates.get(0).unwrap();
+    let key = candidate.0;
+    let cell = candidate.1;
+    for value in cell.values.chars() {
+        let mut field = initial_field.clone();
+        match assign_value(&mut field, key, &value.to_string()) {
+            Some(_) => {
+                match search(&field) {
+                    Some(f) => {
+                        return Some(f)
+                    }
+                    None => ()
+                }
+            },
+            None => ()
+        }
+    }
+    return None;
+}
+
 fn main() {
     let sudoku_field = parse_input();
-    print_field(&sudoku_field);
-    println!("\nCells to guess:");
-    for (cell, _) in cells_to_guess(&sudoku_field).iter() {
-        print!("{} ", cell);
+    // print_field(&sudoku_field);
+    // println!("\nCells to guess:");
+    // for (cell, _) in candidates(&sudoku_field).iter() {
+    //     print!("{} ", cell);
+    // }
+    // println!("\nUnits and peers for C3:");
+    // let c3 = sudoku_field.get("C3").unwrap();
+    // println!("{:?}\n{:?}\n", c3.units, c3.peers);
+    match search(&sudoku_field) {
+        Some(f) => {
+            println!("\nThe solution:\n");
+            print_field(&f);
+        }
+        None => {
+            println!("Contradiction in search!")
+        }
     }
-    println!("\nUnits and peers for C3:");
-    let c3 = sudoku_field.get("C3").unwrap();
-    println!("{:?}\n{:?}", c3.units, c3.peers);
 }
