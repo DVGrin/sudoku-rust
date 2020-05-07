@@ -97,7 +97,7 @@ fn parse_from_stdin() -> HashMap<String, Cell> {
         eprintln!("There was a problem while reading input: {}", e);
         process::exit(1);
     }
-    let sudoku_field = match parse_from_str(&input[..]) {
+    let sudoku_field = match parse_from_str(&input) {
         Ok(field) => field,
         Err(e) => {
             eprintln!("{}", e);
@@ -111,7 +111,10 @@ fn parse_from_stdin() -> HashMap<String, Cell> {
 fn parse_from_str(input: &str) -> Result<HashMap<String, Cell>, String> {
     let input = input.to_string();
     if input.trim().chars().count() != 81 {
-        let err = format!("The length of puzzle should be exactly 81 characters, not {}", input.trim().chars().count());
+        let err = format!(
+            "The length of puzzle should be exactly 81 characters, not {}",
+            input.trim().chars().count()
+        );
         return Err(err);
     }
 
@@ -125,7 +128,7 @@ fn parse_from_str(input: &str) -> Result<HashMap<String, Cell>, String> {
     for row in ROWS.chars() {
         for column in COLUMNS.chars() {
             let key = format!("{}{}", row, column);
-            let cell = Cell::new(&key[..]);
+            let cell = Cell::new(&key);
             squares.insert(key, cell);
         }
     }
@@ -136,7 +139,7 @@ fn parse_from_str(input: &str) -> Result<HashMap<String, Cell>, String> {
             match input_char {
                 '0' | '.' => (),
                 '1' | '2' | '3' | '4' | '5' | '6' | '7' | '8' | '9' => {
-                    match assign_value(&mut squares, &key[..], &input_char.to_string()) {
+                    match assign_value(&mut squares, &key, &input_char.to_string()) {
                         Some(_) => (),
                         None => {
                             return Err("Input puzzle contains a contradiction".to_string());
@@ -144,7 +147,10 @@ fn parse_from_str(input: &str) -> Result<HashMap<String, Cell>, String> {
                     }
                 },
                 _ => {
-                    let err = format!("Invalid value in input puzzle: '{}' in position {}{}", input_char, row, column);
+                    let err = format!(
+                        "Invalid value in input puzzle: '{}' in position {}{}",
+                        input_char, row, column
+                    );
                     return Err(err);
                 }
             };
@@ -163,7 +169,7 @@ fn find_units(cell: &str) -> [Vec<String>; 3] {
     for row in ROWS.chars() {
         row_unit.push(String::from(format!("{}{}", row, cell_column)));
     }
-    
+
     let mut column_unit: Vec<String> = Vec::new();
     for column in COLUMNS.chars() {
         column_unit.push(String::from(format!("{}{}", cell_row, column)));
@@ -227,7 +233,7 @@ fn assign_value(field: &mut HashMap<String, Cell>, key: &str, value: &str) -> Op
             None => (),
             Some(i) => {
                 new_values.remove(i);
-                match assign_value(field, peer_key, &new_values[..]) {
+                match assign_value(field, peer_key, &new_values) {
                     None => return None,
                     Some(_) => ()
                 }
@@ -262,7 +268,7 @@ fn print_field(field: &HashMap<String, Cell>) {
                 Some(s) => &s.values,
                 None => unreachable!()
             };
-            to_print.push_str(&format!("{:^width$}", value, width=width)[..]);
+            to_print.push_str(&format!("{:^width$}", value, width=width));
             delimiter_string.push_str(&format!("{:->1$}", "-", width));
             let (delimiter, cell_delimeter) = match column {
                '3' | '6' => (" | ", "-+-"),
@@ -282,7 +288,7 @@ fn print_field(field: &HashMap<String, Cell>) {
 }
 
 
-fn candidates (field: &HashMap<String, Cell>) -> Vec<(&String, &Cell)> {
+fn candidates(field: &HashMap<String, Cell>) -> Vec<(&String, &Cell)> {
     let mut result: Vec<(&String, &Cell)> = Vec::new();
     for (key, value) in field.iter() {
         if value.values.len() > 1 {
@@ -309,9 +315,7 @@ fn search(field: &HashMap<String, Cell>) -> Option<HashMap<String, Cell>> {
         match assign_value(&mut field, key, &value.to_string()) {
             Some(_) => {
                 match search(&field) {
-                    Some(f) => {
-                        return Some(f)
-                    }
+                    Some(f) => return Some(f),
                     None => ()
                 }
             },
