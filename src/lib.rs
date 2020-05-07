@@ -115,9 +115,10 @@ fn parse_from_str(input: &str) -> Result<HashMap<String, Cell>, String> {
         return Err(err);
     }
 
-    let mut split_input = [""; 9];
-    for i in 0..9 {
-        split_input[i] = &input[i * 9 .. (i+1) * 9];
+    let mut split_input: Vec<String> = vec![input];
+    for _ in 0..8 {
+        let next_row = split_input.last_mut().unwrap().split_off(9);
+        split_input.push(next_row);
     }
 
     let mut squares: HashMap<String, Cell> = HashMap::new();
@@ -129,10 +130,11 @@ fn parse_from_str(input: &str) -> Result<HashMap<String, Cell>, String> {
         }
     }
 
-    for (i, row) in ROWS.chars().enumerate() {
-        for (input_char, column) in split_input[i].chars().zip(COLUMNS.chars()) {
+    for (input_row, row) in split_input.iter().zip(ROWS.chars()) {
+        for (input_char, column) in input_row.chars().zip(COLUMNS.chars()) {
             let key = format!("{}{}", row, column);
             match input_char {
+                '0' | '.' => (),
                 '1' | '2' | '3' | '4' | '5' | '6' | '7' | '8' | '9' => {
                     match assign_value(&mut squares, &key[..], &input_char.to_string()) {
                         Some(_) => (),
@@ -140,8 +142,7 @@ fn parse_from_str(input: &str) -> Result<HashMap<String, Cell>, String> {
                             return Err("Input puzzle contains a contradiction".to_string());
                         }
                     }
-                }
-                '0' | '.' => (),
+                },
                 _ => {
                     let err = format!("Invalid value in input puzzle: '{}' in position {}{}", input_char, row, column);
                     return Err(err);
@@ -186,8 +187,10 @@ fn find_units(cell: &str) -> [Vec<String>; 3] {
             square_unit.push(String::from(format!("{}{}", row, column)))
         }
     }
+
     return [row_unit, column_unit, square_unit]
 }
+
 
 fn find_peers(cell: &str, units: &[Vec<String>; 3]) -> Vec<String> {
     let mut peers: HashSet<String> = HashSet::new();
@@ -201,6 +204,7 @@ fn find_peers(cell: &str, units: &[Vec<String>; 3]) -> Vec<String> {
     peers.sort_unstable();
     return peers;
 }
+
 
 // assign_value returns None if there was a contradiction, assigned value otherwise
 fn assign_value(field: &mut HashMap<String, Cell>, key: &str, value: &str) -> Option<String> {
@@ -232,6 +236,7 @@ fn assign_value(field: &mut HashMap<String, Cell>, key: &str, value: &str) -> Op
     }
     return Some(value.to_string());
 }
+
 
 fn print_field(field: &HashMap<String, Cell>) {
     let mut column_width: [usize; 9] = [0; 9];
@@ -276,6 +281,7 @@ fn print_field(field: &HashMap<String, Cell>) {
     }
 }
 
+
 fn candidates (field: &HashMap<String, Cell>) -> Vec<(&String, &Cell)> {
     let mut result: Vec<(&String, &Cell)> = Vec::new();
     for (key, value) in field.iter() {
@@ -286,6 +292,7 @@ fn candidates (field: &HashMap<String, Cell>) -> Vec<(&String, &Cell)> {
     result.sort_by(|x, y| x.1.values.len().cmp(&y.1.values.len()));
     return result;
 }
+
 
 fn search(field: &HashMap<String, Cell>) -> Option<HashMap<String, Cell>> {
     let initial_field = field.clone();

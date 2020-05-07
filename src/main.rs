@@ -6,6 +6,6 @@ fn main() {
     let input = "4.....8.5.3..........7......2.....6.....8.4......1.......6.3.7.5..2.....1.4......";
     println!("Input: {}", input);
     sudoku::solve_from_str(input);
-    print!("\nGive me another input: ");
+    println!("\nGive me another input: ");
     sudoku::solve_from_stdin();
 }
