@@ -5,6 +5,9 @@ use std::collections::{HashMap, HashSet};
 const ROWS: &str = "ABCDEFGHI";
 const COLUMNS: &str = "123456789";
 
+type SudokuField = HashMap<String, Cell>;
+
+
 #[derive(Clone)]
 struct Cell {
     values: String,
@@ -45,7 +48,7 @@ pub fn solve_from_str(input: &str) -> () {
 }
 
 
-pub fn solve_from_stdin() {
+pub fn solve_from_stdin() -> () {
     let sudoku_field = parse_from_stdin();
     match search(&sudoku_field) {
         Some(field) => {
@@ -91,7 +94,7 @@ mod tests {
 }
 
 
-fn parse_from_stdin() -> HashMap<String, Cell> {
+fn parse_from_stdin() -> SudokuField {
     let mut input = String::new();
     if let Err(e) = io::stdin().read_line(&mut input) {
         eprintln!("There was a problem while reading input: {}", e);
@@ -108,7 +111,20 @@ fn parse_from_stdin() -> HashMap<String, Cell> {
 }
 
 
-fn parse_from_str(input: &str) -> Result<HashMap<String, Cell>, String> {
+fn new_sudoku_field() -> SudokuField {
+    let mut field: SudokuField = HashMap::new();
+    for row in ROWS.chars() {
+        for column in COLUMNS.chars() {
+            let key = format!("{}{}", row, column);
+            let cell = Cell::new(&key);
+            field.insert(key, cell);
+        }
+    }
+    return field;
+}
+
+
+fn parse_from_str(input: &str) -> Result<SudokuField, String> {
     let input = input.to_string();
     if input.trim().chars().count() != 81 {
         let err = format!(
@@ -124,15 +140,7 @@ fn parse_from_str(input: &str) -> Result<HashMap<String, Cell>, String> {
         split_input.push(next_row);
     }
 
-    let mut squares: HashMap<String, Cell> = HashMap::new();
-    for row in ROWS.chars() {
-        for column in COLUMNS.chars() {
-            let key = format!("{}{}", row, column);
-            let cell = Cell::new(&key);
-            squares.insert(key, cell);
-        }
-    }
-
+    let mut squares: SudokuField = new_sudoku_field();
     for (input_row, row) in split_input.iter().zip(ROWS.chars()) {
         for (input_char, column) in input_row.chars().zip(COLUMNS.chars()) {
             let key = format!("{}{}", row, column);
@@ -213,7 +221,7 @@ fn find_peers(cell: &str, units: &[Vec<String>; 3]) -> Vec<String> {
 
 
 // assign_value returns None if there was a contradiction, assigned value otherwise
-fn assign_value(field: &mut HashMap<String, Cell>, key: &str, value: &str) -> Option<String> {
+fn assign_value(field: &mut SudokuField, key: &str, value: &str) -> Option<String> {
     if value.len() > 1 {
         let cell = field.get_mut(&key.to_string()).unwrap();
         cell.values = value.to_string();
@@ -244,7 +252,7 @@ fn assign_value(field: &mut HashMap<String, Cell>, key: &str, value: &str) -> Op
 }
 
 
-fn print_field(field: &HashMap<String, Cell>) {
+fn print_field(field: &SudokuField) {
     let mut column_width: [usize; 9] = [0; 9];
     for (j, column) in COLUMNS.chars().enumerate() {
         for row in ROWS.chars() {
@@ -288,7 +296,7 @@ fn print_field(field: &HashMap<String, Cell>) {
 }
 
 
-fn candidates(field: &HashMap<String, Cell>) -> Vec<(&String, &Cell)> {
+fn candidates(field: &SudokuField) -> Vec<(&String, &Cell)> {
     let mut result: Vec<(&String, &Cell)> = Vec::new();
     for (key, value) in field.iter() {
         if value.values.len() > 1 {
@@ -300,7 +308,7 @@ fn candidates(field: &HashMap<String, Cell>) -> Vec<(&String, &Cell)> {
 }
 
 
-fn search(field: &HashMap<String, Cell>) -> Option<HashMap<String, Cell>> {
+fn search(field: &SudokuField) -> Option<SudokuField> {
     let initial_field = field.clone();
     let candidates = candidates(&field);
     if candidates.is_empty() {
