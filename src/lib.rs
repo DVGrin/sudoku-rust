@@ -23,7 +23,6 @@ impl SudokuField {
         return SudokuField(field);
     }
 
-
     fn assign(&mut self, key: &str, value: &str) -> Option<String> {
         match value {
             value if value.len() > 1 => {
@@ -34,7 +33,7 @@ impl SudokuField {
             "" => return None,
             _ => ()
         }
-    
+        
         let cell = self.0.get_mut(&key.to_string()).unwrap();
         cell.values = value.to_string();
         let peers = &cell.peers.clone();
@@ -55,7 +54,6 @@ impl SudokuField {
         return Some(value.to_string());
     }
 
-
     fn candidates(&self) -> Vec<(&String, &Cell)> {
         let mut result: Vec<(&String, &Cell)> = Vec::new();
         for (key, value) in self.0.iter() {
@@ -67,7 +65,6 @@ impl SudokuField {
         return result;
     }
 }
-
 
 impl fmt::Display for SudokuField {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
@@ -84,9 +81,8 @@ impl fmt::Display for SudokuField {
                 }
             }
         }
-    
         let mut result = String::new();
-
+        
         for row in ROWS.chars() {
             let mut to_print = String::from(" ");
             let mut delimiter_string = String::from("-");
@@ -117,7 +113,6 @@ impl fmt::Display for SudokuField {
                 _ => ()
             }
         }
-    
         write!(f, "{}", result)
     }
 }
@@ -141,22 +136,21 @@ impl Cell {
         }
     }
 
-
     fn find_units(cell: &str) -> [Vec<String>; 3] {
         let mut cell = cell.chars();
         let cell_row = cell.next().unwrap();
         let cell_column = cell.next().unwrap();
-    
+        
         let mut row_unit: Vec<String> = Vec::new();
         for row in ROWS.chars() {
             row_unit.push(String::from(format!("{}{}", row, cell_column)));
         }
-    
+        
         let mut column_unit: Vec<String> = Vec::new();
         for column in COLUMNS.chars() {
             column_unit.push(String::from(format!("{}{}", cell_row, column)));
         }
-    
+        
         let mut square_unit: Vec<String> = Vec::new();
         let rows = match cell_row {
             'A' | 'B' | 'C' => "ABC",
@@ -175,10 +169,8 @@ impl Cell {
                 square_unit.push(String::from(format!("{}{}", row, column)))
             }
         }
-    
         return [row_unit, column_unit, square_unit]
     }
-
 
     fn find_peers(cell: &str, units: &[Vec<String>; 3]) -> Vec<String> {
         let mut peers: HashSet<String> = HashSet::new();
@@ -193,7 +185,6 @@ impl Cell {
         return peers;
     }
 }
-
 
 
 fn parse_from_stdin() -> SudokuField {
@@ -222,13 +213,11 @@ fn parse_from_str(input: &str) -> Result<SudokuField, String> {
         );
         return Err(err);
     }
-
     let mut split_input: Vec<String> = vec![input];
     for _ in 0..8 {
         let next_row = split_input.last_mut().unwrap().split_off(9);
         split_input.push(next_row);
     }
-
     let mut squares: SudokuField = SudokuField::new();
     for (input_row, row) in split_input.iter().zip(ROWS.chars()) {
         for (input_char, column) in input_row.chars().zip(COLUMNS.chars()) {
@@ -263,7 +252,6 @@ fn search(field: &SudokuField) -> Option<SudokuField> {
     if candidates.is_empty() {
         return Some(initial_field);
     }
-
     let candidate: &(&String, &Cell) = candidates.get(0).unwrap();
     let key = candidate.0;
     let cell = candidate.1;
